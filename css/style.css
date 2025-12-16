@@ -280,6 +280,9 @@ h1 {
   background-repeat: no-repeat;
   background-position: right 1rem center;
   padding-right: 3rem;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .styled-select:hover {
@@ -340,6 +343,8 @@ h1 {
   position: relative;
   overflow: hidden;
   flex: 1;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .btn::before {
@@ -353,6 +358,8 @@ h1 {
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
   transition: width 0.6s, height 0.6s;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .btn:hover::before {
@@ -440,7 +447,8 @@ h1 {
   font-weight: 600;
   transition: var(--transition);
   position: relative;
-  z-index: 1;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .btn-hint:hover {
@@ -478,6 +486,8 @@ h1 {
   background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
   opacity: 0;
   transition: var(--transition);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .card::after {
@@ -490,6 +500,8 @@ h1 {
   background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
   opacity: 0;
   transition: var(--transition);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .card:hover {
@@ -590,6 +602,8 @@ h1 {
   touch-action: manipulation; /* Améliore la réactivité sur mobile */
   width: 100%;
   text-align: center;
+  z-index: 5;
+  pointer-events: auto;
 }
 
 .opts label::before {
@@ -601,6 +615,8 @@ h1 {
   height: 100%;
   background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Supprimer le petit rond après */
@@ -655,6 +671,8 @@ h1 {
   font-weight: bold;
   font-size: 1rem;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Cacher le radio button visuellement mais le garder fonctionnel */
@@ -698,7 +716,8 @@ h1 {
   font-weight: 500;
   box-sizing: border-box;
   position: relative;
-  z-index: 1;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .opts input[type="text"]:hover,
@@ -1088,12 +1107,17 @@ input[disabled] {
 }
 
 /* S'assurer que toute la zone est cliquable */
+.answer-option {
+  pointer-events: auto !important;
+  z-index: 5;
+}
+
 .answer-option * {
   pointer-events: none; /* Désactiver les événements sur les enfants */
 }
 
 .answer-option input[type="radio"] {
-  pointer-events: auto; /* Réactiver pour le radio button */
+  pointer-events: none; /* Le radio button est géré par le label */
 }
 
 /* Amélioration tactile pour mobile */
