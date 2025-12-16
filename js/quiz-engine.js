@@ -1,31 +1,68 @@
 /**
  * Moteur du quiz - Logique principale
  * Mode : Une question à la fois avec correction immédiate
+ * Version optimisée
  */
 
-// Sélecteurs DOM
+// Configuration
+const DEBUG = false; // Mettre à true pour activer les logs de debug
+
+// Utilitaires
+const log = (...args) => DEBUG && console.log(...args);
+const warn = (...args) => DEBUG && console.warn(...args);
+const error = (...args) => console.error(...args);
+
+// Sélecteurs DOM - Cache pour performance
 const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
 const quizEl = $("#quiz");
 const scoreEl = $("#score");
 const startBtn = $("#start");
 const difficultySel = $("#difficulty");
 const countSel = $("#count");
 
+// État du quiz
 let current = [];
 let currentIndex = 0;
 let score = 0;
-let answers = []; // Stocke les réponses pour le score final
-let isProcessing = false; // Protection contre les double-clics
-let isQuizStarted = false; // État du quiz
+let answers = [];
+let isProcessing = false;
+let isQuizStarted = false;
+
+/**
+ * Affiche un message d'erreur utilisateur (remplace alert)
+ */
+function showError(message) {
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "error-message";
+  errorDiv.setAttribute("role", "alert");
+  errorDiv.textContent = message;
+  errorDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ef4444;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    z-index: 1000;
+    animation: slideDown 0.3s ease;
+  `;
+  document.body.appendChild(errorDiv);
+  setTimeout(() => {
+    errorDiv.style.animation = "slideUp 0.3s ease";
+    setTimeout(() => errorDiv.remove(), 300);
+  }, 3000);
+}
 
 /**
  * Normalise le texte pour la comparaison (insensible à la casse et aux accents)
- * @param {string} s - Texte à normaliser
- * @returns {string} Texte normalisé
  */
 function normalizeText(s) {
-  return (s ?? "")
-    .toString()
+  if (!s) return "";
+  return String(s)
     .trim()
     .toLowerCase()
     .normalize("NFD")
@@ -33,12 +70,10 @@ function normalizeText(s) {
 }
 
 /**
- * Mélange un tableau (algorithme Fisher-Yates)
- * @param {Array} arr - Tableau à mélanger
- * @returns {Array} Tableau mélangé
+ * Mélange un tableau (algorithme Fisher-Yates optimisé)
  */
 function shuffle(arr) {
-  const a = arr.slice();
+  const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
@@ -48,23 +83,22 @@ function shuffle(arr) {
 
 /**
  * Sélectionne les questions selon le niveau et le nombre choisis
- * @returns {Array} Tableau de questions sélectionnées
  */
 function pickQuestions() {
   const diff = difficultySel.value;
   const n = parseInt(countSel.value, 10);
   let pool = QUESTIONS;
+  
   if (diff !== "tous") {
     pool = QUESTIONS.filter((q) => q.difficulty === diff);
   }
-  const selected = shuffle(pool).slice(0, Math.min(n, pool.length));
   
-  // Validation : vérifier qu'on a des questions
-  if (selected.length === 0) {
-    alert("Aucune question disponible pour ce niveau.");
+  if (pool.length === 0) {
+    showError("Aucune question disponible pour ce niveau.");
     return [];
   }
   
+  const selected = shuffle(pool).slice(0, Math.min(n, pool.length));
   return selected;
 }
 
@@ -78,41 +112,57 @@ function renderCurrentQuestion() {
   }
 
   const q = current[currentIndex];
+  if (!q) {
+    error("Question introuvable à l'index", currentIndex);
+    return;
+  }
+
   quizEl.innerHTML = "";
   scoreEl.textContent = "";
 
-    const card = document.createElement("div");
-    card.className = "card";
-    card.dataset.qid = q.id;
+  const card = document.createElement("article");
+  card.className = "card";
+  card.dataset.qid = q.id;
+  card.setAttribute("role", "article");
+  card.setAttribute("aria-labelledby", `question-${q.id}`);
 
-    // Meta informations
-    const meta = document.createElement("div");
-    meta.className = "meta";
+  // Meta informations
+  const meta = document.createElement("div");
+  meta.className = "meta";
   meta.innerHTML = `Question ${currentIndex + 1} / ${current.length} <span class="pill">${q.difficulty}</span> <span class="pill">${q.type}</span>`;
-    card.appendChild(meta);
+  card.appendChild(meta);
 
-    // Texte de la question
-    const p = document.createElement("div");
+  // Texte de la question
+  const p = document.createElement("div");
   p.className = "question-text";
-    p.innerHTML = q.prompt.replace(/\n/g, "<br>");
-    card.appendChild(p);
+  p.id = `question-${q.id}`;
+  p.setAttribute("role", "heading");
+  p.setAttribute("aria-level", "2");
+  p.innerHTML = q.prompt.replace(/\n/g, "<br>");
+  card.appendChild(p);
 
-    // Zone de réponses
-    const area = document.createElement("div");
-    area.className = "opts";
-    
-    if (q.type === "mcq") {
-      q.options.forEach((opt, i) => {
-        const id = `${q.id}_${i}`;
-        const label = document.createElement("label");
+  // Zone de réponses
+  const area = document.createElement("div");
+  area.className = "opts";
+  area.setAttribute("role", "group");
+  area.setAttribute("aria-label", "Options de réponse");
+  
+  if (q.type === "mcq") {
+    q.options.forEach((opt, i) => {
+      const id = `${q.id}_${i}`;
+      const label = document.createElement("label");
       label.setAttribute("for", id);
       label.className = "option-label answer-option";
+      label.setAttribute("role", "radio");
+      label.setAttribute("aria-checked", "false");
+      label.setAttribute("tabindex", "0");
       
       const radio = document.createElement("input");
       radio.type = "radio";
       radio.name = q.id;
       radio.id = id;
       radio.value = i;
+      radio.setAttribute("aria-label", opt);
       
       const text = document.createElement("span");
       text.textContent = opt;
@@ -121,40 +171,56 @@ function renderCurrentQuestion() {
       
       label.appendChild(radio);
       label.appendChild(text);
-        area.appendChild(label);
+      area.appendChild(label);
       
-      // Rendre toute la zone cliquable
-      label.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+      // Gestion des clics et navigation clavier
+      const handleSelect = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         
-        // Cocher le radio button
         radio.checked = true;
         radio.dispatchEvent(new Event('change', { bubbles: true }));
         
-        // Retirer la classe selected de toutes les options
         const allOptions = card.querySelectorAll('.answer-option');
-        allOptions.forEach(o => o.classList.remove('selected'));
+        allOptions.forEach((o, idx) => {
+          o.classList.remove('selected');
+          o.setAttribute("aria-checked", "false");
+          o.setAttribute("tabindex", idx === i ? "0" : "-1");
+        });
         
-        // Ajouter la classe selected à l'option cliquée
         label.classList.add('selected');
+        label.setAttribute("aria-checked", "true");
+      };
+      
+      label.addEventListener('click', handleSelect);
+      label.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleSelect(e);
+        }
       });
-      });
-    } else if (q.type === "truefalse") {
+    });
+  } else if (q.type === "truefalse") {
     ["true", "false"].forEach((val, idx) => {
       const id = `${q.id}_tf_${idx}`;
-        const label = document.createElement("label");
+      const label = document.createElement("label");
       label.setAttribute("for", id);
       label.className = "option-label answer-option";
+      label.setAttribute("role", "radio");
+      label.setAttribute("aria-checked", "false");
+      label.setAttribute("tabindex", "0");
       
       const radio = document.createElement("input");
       radio.type = "radio";
       radio.name = q.id;
       radio.id = id;
       radio.value = val;
+      const labelText = val === "true" ? "Vrai" : "Faux";
+      radio.setAttribute("aria-label", labelText);
       
       const text = document.createElement("span");
-      text.textContent = val === "true" ? "Vrai" : "Faux";
+      text.textContent = labelText;
       text.style.flex = "1";
       text.style.textAlign = "center";
       text.style.fontSize = "1.1rem";
@@ -162,113 +228,134 @@ function renderCurrentQuestion() {
       
       label.appendChild(radio);
       label.appendChild(text);
-        area.appendChild(label);
+      area.appendChild(label);
       
-      // Rendre toute la zone cliquable
-      label.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+      const handleSelect = (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         
-        // Cocher le radio button
         radio.checked = true;
         radio.dispatchEvent(new Event('change', { bubbles: true }));
         
-        // Retirer la classe selected de toutes les options
         const allOptions = card.querySelectorAll('.answer-option');
-        allOptions.forEach(o => o.classList.remove('selected'));
+        allOptions.forEach((o, optIdx) => {
+          o.classList.remove('selected');
+          o.setAttribute("aria-checked", "false");
+          o.setAttribute("tabindex", optIdx === idx ? "0" : "-1");
+        });
         
-        // Ajouter la classe selected à l'option cliquée
         label.classList.add('selected');
+        label.setAttribute("aria-checked", "true");
+      };
+      
+      label.addEventListener('click', handleSelect);
+      label.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleSelect(e);
+        }
       });
-      });
-    } else if (q.type === "short" || q.type === "fill" || q.type === "order") {
-      const input = document.createElement("input");
-      input.type = "text";
+    });
+  } else if (q.type === "short" || q.type === "fill" || q.type === "order") {
+    const input = document.createElement("input");
+    input.type = "text";
     input.placeholder = q.type === "order" ? "Ex: 2-1-3-4" : "Ta réponse…";
-      input.name = q.id;
+    input.name = q.id;
     input.id = `input_${q.id}`;
     input.className = "answer-input";
     input.autocomplete = "off";
     input.spellcheck = false;
-      area.appendChild(input);
-      if (q.type === "order") {
-        const list = document.createElement("div");
-        list.className = "hint";
-        list.innerHTML =
-          "Éléments :<br>" +
-          q.items.map((x, i) => `(${i + 1}) ${x}`).join("<br>");
-        area.appendChild(list);
-      }
+    input.setAttribute("aria-label", "Champ de réponse");
+    area.appendChild(input);
+    
+    if (q.type === "order") {
+      const list = document.createElement("div");
+      list.className = "hint";
+      list.setAttribute("role", "note");
+      list.setAttribute("aria-label", "Éléments à ordonner");
+      list.innerHTML = "Éléments :<br>" + q.items.map((x, i) => `(${i + 1}) ${x}`).join("<br>");
+      area.appendChild(list);
     }
-    card.appendChild(area);
+  }
+  card.appendChild(area);
 
-    // Zone d'indice + bouton
-    const hintArea = document.createElement("div");
-    hintArea.className = "hint-area";
-    const hintBtn = document.createElement("button");
-    hintBtn.className = "btn-hint";
+  // Zone d'indice
+  const hintArea = document.createElement("div");
+  hintArea.className = "hint-area";
+  const hintBtn = document.createElement("button");
+  hintBtn.className = "btn-hint";
   hintBtn.type = "button";
   hintBtn.textContent = "💡 Afficher l'indice";
-    const hintText = document.createElement("div");
-    hintText.className = "hint-text";
-    hintText.textContent = q.hint ?? "";
+  hintBtn.setAttribute("aria-expanded", "false");
+  hintBtn.setAttribute("aria-controls", `hint-${q.id}`);
+  
+  const hintText = document.createElement("div");
+  hintText.className = "hint-text";
+  hintText.id = `hint-${q.id}`;
+  hintText.setAttribute("role", "region");
+  hintText.setAttribute("aria-label", "Indice");
+  hintText.textContent = q.hint ?? "";
   
   hintBtn.addEventListener("click", function(e) {
     e.preventDefault();
     e.stopPropagation();
-      hintText.classList.toggle("show");
-      hintBtn.textContent = hintText.classList.contains("show")
-      ? "🙈 Masquer l'indice"
-      : "💡 Afficher l'indice";
-    });
+    const isShowing = hintText.classList.toggle("show");
+    hintBtn.setAttribute("aria-expanded", isShowing);
+    hintBtn.textContent = isShowing ? "🙈 Masquer l'indice" : "💡 Afficher l'indice";
+  });
   
-    hintArea.appendChild(hintBtn);
-    hintArea.appendChild(hintText);
-    card.appendChild(hintArea);
+  hintArea.appendChild(hintBtn);
+  hintArea.appendChild(hintText);
+  card.appendChild(hintArea);
 
-  // Zone de feedback (cachée au début)
-    const fb = document.createElement("div");
+  // Zone de feedback
+  const fb = document.createElement("div");
   fb.className = "hint feedback-hidden";
-    fb.dataset.role = "feedback";
-    card.appendChild(fb);
+  fb.dataset.role = "feedback";
+  fb.setAttribute("role", "status");
+  fb.setAttribute("aria-live", "polite");
+  card.appendChild(fb);
 
   // Bouton Valider
   const validateBtn = document.createElement("button");
   validateBtn.className = "btn btn-primary btn-validate";
   validateBtn.textContent = "✓ Valider ma réponse";
   validateBtn.type = "button";
+  validateBtn.setAttribute("aria-label", "Valider la réponse");
   validateBtn.addEventListener("click", validateAnswer, { passive: false });
   card.appendChild(validateBtn);
 
-  // Bouton Question suivante (caché au début)
+  // Bouton Question suivante
   const nextBtn = document.createElement("button");
   nextBtn.className = "btn btn-success btn-next";
   nextBtn.textContent = "➡️ Question suivante";
   nextBtn.type = "button";
   nextBtn.style.display = "none";
+  nextBtn.setAttribute("aria-label", "Passer à la question suivante");
   nextBtn.addEventListener("click", nextQuestion, { passive: false });
   card.appendChild(nextBtn);
 
-    quizEl.appendChild(card);
+  quizEl.appendChild(card);
   
-  // Focus sur le premier input si c'est un champ texte
+  // Focus management
   const firstInput = card.querySelector('input[type="text"]');
   if (firstInput) {
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       firstInput.focus();
-      firstInput.select(); // Sélectionner le texte si déjà présent
-    }, 200);
+      if (firstInput.value) firstInput.select();
+    });
   }
   
-  // Ajouter un listener pour valider avec Enter
+  // Validation avec Enter
   const textInputs = card.querySelectorAll('input[type="text"]');
   textInputs.forEach(input => {
     input.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        const validateBtn = card.querySelector(".btn-validate");
-        if (validateBtn && validateBtn.style.display !== "none") {
-          validateBtn.click();
+        const btn = card.querySelector(".btn-validate");
+        if (btn && btn.style.display !== "none" && !btn.disabled) {
+          btn.click();
         }
       }
     });
@@ -279,7 +366,6 @@ function renderCurrentQuestion() {
  * Valide la réponse de l'utilisateur
  */
 function validateAnswer(e) {
-  // Protection contre les double-clics
   if (isProcessing) {
     if (e) {
       e.preventDefault();
@@ -304,7 +390,6 @@ function validateAnswer(e) {
   
   if (!fb || !validateBtn) return false;
   
-  // Si le feedback est déjà affiché, ne rien faire
   if (!fb.classList.contains("feedback-hidden")) {
     return false;
   }
@@ -316,17 +401,14 @@ function validateAnswer(e) {
     e.stopPropagation();
   }
   
-  // Désactiver le bouton immédiatement
   validateBtn.disabled = true;
   validateBtn.style.opacity = "0.6";
   validateBtn.style.cursor = "not-allowed";
   
-  // Vérifier qu'une réponse a été donnée
   const userAnswer = getUserAnswer(q, card);
   
-  // Pour les champs texte, vérifier qu'ils ne sont pas vides
   if ((q.type === "short" || q.type === "fill" || q.type === "order") && (!userAnswer || userAnswer.trim() === "")) {
-    alert("Veuillez saisir une réponse avant de valider.");
+    showError("Veuillez saisir une réponse avant de valider.");
     isProcessing = false;
     validateBtn.disabled = false;
     validateBtn.style.opacity = "1";
@@ -334,9 +416,8 @@ function validateAnswer(e) {
     return false;
   }
   
-  // Pour les QCM et Vrai/Faux, vérifier qu'une option a été sélectionnée
   if ((q.type === "mcq" || q.type === "truefalse") && userAnswer === null) {
-    alert("Veuillez sélectionner une réponse avant de valider.");
+    showError("Veuillez sélectionner une réponse avant de valider.");
     isProcessing = false;
     validateBtn.disabled = false;
     validateBtn.style.opacity = "1";
@@ -344,16 +425,13 @@ function validateAnswer(e) {
     return false;
   }
   
-  // Désactiver les inputs
   const inputs = card.querySelectorAll("input");
   inputs.forEach(input => {
     input.disabled = true;
   });
 
-  // Vérifier si la réponse est correcte
   const isCorrectAnswer = isCorrect(q, userAnswer);
   
-  // Stocker le résultat
   answers.push({
     question: q,
     userAnswer: userAnswer,
@@ -364,12 +442,12 @@ function validateAnswer(e) {
     score++;
   }
 
-  // Afficher le feedback
   fb.classList.remove("feedback-hidden");
   fb.classList.add("hint", "result", isCorrectAnswer ? "ok" : "ko");
   
   if (isCorrectAnswer) {
     fb.innerHTML = `✅ <strong>Correct !</strong><br>${q.explanation || ""}`;
+    fb.setAttribute("aria-label", "Réponse correcte");
   } else {
     const expected =
       q.type === "mcq"
@@ -380,21 +458,20 @@ function validateAnswer(e) {
         ? q.answerOrder.join("-")
         : q.answerText;
     fb.innerHTML = `❌ <strong>Incorrect.</strong> Réponse attendue : <strong>${expected}</strong><br>${q.explanation || ""}`;
+    fb.setAttribute("aria-label", `Réponse incorrecte. Réponse attendue : ${expected}`);
   }
 
-  // Masquer le bouton Valider, afficher Question suivante
   validateBtn.style.display = "none";
   if (nextBtn) {
     nextBtn.style.display = "block";
     nextBtn.disabled = false;
     nextBtn.style.opacity = "1";
     nextBtn.style.cursor = "pointer";
+    // Focus sur le bouton suivant pour l'accessibilité
+    requestAnimationFrame(() => nextBtn.focus());
   }
   
-  // Afficher le score actuel
   updateProgressScore();
-  
-  // Réinitialiser le flag de traitement immédiatement pour permettre le clic sur "Question suivante"
   isProcessing = false;
 }
 
@@ -407,20 +484,18 @@ function nextQuestion(e) {
     e.stopPropagation();
   }
   
-  // Protection contre les double-clics
   if (isProcessing) {
-    console.log("Déjà en cours de traitement, ignore le clic");
+    log("Déjà en cours de traitement");
     return false;
   }
   
   if (!isQuizStarted) {
-    console.log("Le quiz n'a pas démarré");
+    log("Le quiz n'a pas démarré");
     return false;
   }
   
   if (currentIndex >= current.length - 1) {
-    console.log("Dernière question atteinte");
-    // On est à la dernière question, afficher le score final
+    log("Dernière question atteinte");
     currentIndex++;
     showFinalScore();
     return false;
@@ -428,7 +503,6 @@ function nextQuestion(e) {
   
   isProcessing = true;
   
-  // Désactiver le bouton immédiatement
   const nextBtn = document.querySelector(".btn-next");
   if (nextBtn) {
     nextBtn.disabled = true;
@@ -436,22 +510,19 @@ function nextQuestion(e) {
     nextBtn.style.cursor = "not-allowed";
   }
   
-  // Passer à la question suivante
   currentIndex++;
+  log(`Passage à la question ${currentIndex + 1} / ${current.length}`);
   
-  console.log(`Passage à la question ${currentIndex + 1} / ${current.length}`);
-  
-  // Petit délai pour éviter les bugs visuels
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     try {
       renderCurrentQuestion();
       isProcessing = false;
-    } catch (error) {
-      console.error("Erreur lors du rendu de la question suivante:", error);
+    } catch (err) {
+      error("Erreur lors du rendu:", err);
       isProcessing = false;
-      alert("Une erreur est survenue. Veuillez recharger la page.");
+      showError("Une erreur est survenue. Veuillez recharger la page.");
     }
-  }, 150);
+  });
   
   return false;
 }
@@ -461,7 +532,7 @@ function nextQuestion(e) {
  */
 function updateProgressScore() {
   if (currentIndex < current.length) {
-    scoreEl.innerHTML = `<div class="progress-score">Score actuel : ${score} / ${currentIndex + 1}</div>`;
+    scoreEl.innerHTML = `<div class="progress-score" role="status" aria-live="polite">Score actuel : ${score} / ${currentIndex + 1}</div>`;
   }
 }
 
@@ -471,8 +542,9 @@ function updateProgressScore() {
 function showFinalScore() {
   quizEl.innerHTML = "";
   
-  const finalCard = document.createElement("div");
+  const finalCard = document.createElement("article");
   finalCard.className = "card final-score-card";
+  finalCard.setAttribute("role", "article");
   
   const percentage = Math.round((score / current.length) * 100);
   let emoji = "🎯";
@@ -503,24 +575,26 @@ function showFinalScore() {
   
   finalCard.innerHTML = `
     <div class="final-score-content ${colorClass}">
-      <div class="final-emoji">${emoji}</div>
+      <div class="final-emoji" aria-hidden="true">${emoji}</div>
       <h2>${message}</h2>
       <div class="final-score-text">Score final : ${score} / ${current.length}</div>
       <div class="final-percentage">${percentage}% de bonnes réponses</div>
-      <button class="btn btn-primary btn-restart" onclick="location.reload()">🔄 Recommencer</button>
+      <button class="btn btn-primary btn-restart" onclick="location.reload()" aria-label="Recommencer le quiz">🔄 Recommencer</button>
     </div>
   `;
   
   quizEl.appendChild(finalCard);
-  
   scoreEl.innerHTML = "";
+  
+  // Focus sur le bouton recommencer
+  requestAnimationFrame(() => {
+    const restartBtn = finalCard.querySelector(".btn-restart");
+    if (restartBtn) restartBtn.focus();
+  });
 }
 
 /**
- * Collecte la réponse de l'utilisateur pour une question
- * @param {Object} q - Question
- * @param {HTMLElement} card - Élément de la carte (optionnel, pour chercher dans le bon contexte)
- * @returns {*} Réponse de l'utilisateur
+ * Collecte la réponse de l'utilisateur
  */
 function getUserAnswer(q, card = null) {
   const searchContext = card || document;
@@ -543,9 +617,6 @@ function getUserAnswer(q, card = null) {
 
 /**
  * Vérifie si la réponse est correcte
- * @param {Object} q - Question
- * @param {*} userAnsRaw - Réponse brute de l'utilisateur
- * @returns {boolean} True si correct
  */
 function isCorrect(q, userAnsRaw) {
   if (q.type === "mcq") return userAnsRaw === q.answer;
@@ -568,7 +639,6 @@ function isCorrect(q, userAnsRaw) {
  * Initialise le quiz
  */
 function startQuiz(e) {
-  // Protection contre les double-clics et les appels multiples
   if (isProcessing || isQuizStarted) {
     if (e) {
       e.preventDefault();
@@ -585,9 +655,8 @@ function startQuiz(e) {
       e.stopPropagation();
     }
     
-    console.log("Démarrage du quiz...");
+    log("Démarrage du quiz...");
     
-    // Désactiver le bouton immédiatement
     if (startBtn) {
       startBtn.disabled = true;
       startBtn.style.opacity = "0.6";
@@ -596,7 +665,6 @@ function startQuiz(e) {
     
     current = pickQuestions();
     if (current.length === 0) {
-      console.warn("Aucune question sélectionnée");
       isProcessing = false;
       if (startBtn) {
         startBtn.disabled = false;
@@ -606,7 +674,7 @@ function startQuiz(e) {
       return false;
     }
     
-    console.log(`${current.length} questions sélectionnées`);
+    log(`${current.length} questions sélectionnées`);
     currentIndex = 0;
     score = 0;
     answers = [];
@@ -615,15 +683,14 @@ function startQuiz(e) {
     if (difficultySel) difficultySel.disabled = true;
     if (countSel) countSel.disabled = true;
     
-    // Petit délai pour éviter les bugs visuels
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       renderCurrentQuestion();
       isProcessing = false;
-    }, 100);
+    });
     
     return false;
-  } catch (error) {
-    console.error("Erreur lors du démarrage du quiz:", error);
+  } catch (err) {
+    error("Erreur lors du démarrage:", err);
     isProcessing = false;
     isQuizStarted = false;
     
@@ -633,42 +700,29 @@ function startQuiz(e) {
       startBtn.style.cursor = "pointer";
     }
     
-    alert("Une erreur est survenue lors du démarrage du quiz. Veuillez recharger la page.");
+    showError("Une erreur est survenue lors du démarrage du quiz. Veuillez recharger la page.");
     return false;
   }
 }
 
-// Event listeners
-// S'assurer que le DOM est chargé avant d'attacher les listeners
+// Initialisation
 function initQuiz() {
   if (!startBtn) {
-    console.error("Bouton 'start' introuvable dans le DOM");
+    error("Bouton 'start' introuvable");
     return;
   }
   
   if (!difficultySel || !countSel) {
-    console.error("Éléments de contrôle introuvables dans le DOM");
+    error("Éléments de contrôle introuvables");
     return;
   }
   
-  // Attacher le listener avec once: false pour permettre plusieurs clics (mais protégé par isProcessing)
   startBtn.addEventListener("click", startQuiz, { passive: false });
 }
 
-// Initialiser quand le DOM est prêt
+// DOM Ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initQuiz);
 } else {
-  // DOM déjà chargé
   initQuiz();
 }
-
-// Permettre la validation avec Enter pour les champs texte
-document.addEventListener("keypress", (e) => {
-  if (e.key === "Enter" && e.target.tagName === "INPUT" && e.target.type === "text") {
-    const validateBtn = document.querySelector(".btn-validate");
-    if (validateBtn && validateBtn.style.display !== "none") {
-      validateBtn.click();
-    }
-  }
-});

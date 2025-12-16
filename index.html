@@ -2,21 +2,36 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="description"
-      content="Quiz interactif sur George Michael avec différents niveaux de difficulté et système d'indices"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Quiz interactif sur George Michael avec différents niveaux de difficulté et système d'indices. Testez vos connaissances sur la légende de la pop !" />
+    <meta name="keywords" content="quiz, george michael, wham, pop, musique, test, connaissances" />
+    <meta name="author" content="Quiz George Michael" />
+    <meta name="theme-color" content="#6366f1" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Quiz George Michael — Testez vos connaissances" />
+    <meta property="og:description" content="Quiz interactif sur George Michael avec différents niveaux de difficulté" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Quiz George Michael" />
+    <meta name="twitter:description" content="Testez vos connaissances sur la légende de la pop" />
+    
     <title>Quiz George Michael — Testez vos connaissances</title>
+    
+    <!-- Preconnect pour améliorer les performances -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+    
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <div class="background-animation"></div>
+    <div class="background-animation" aria-hidden="true"></div>
     <div class="container">
-      <header class="header">
+      <header class="header" role="banner">
         <div class="header-content">
           <h1>
             <span class="title-main">Quiz</span>
@@ -26,48 +41,48 @@
         </div>
       </header>
 
-      <div class="controls-panel">
-        <div class="control-group">
-          <label for="difficulty">
-            <span class="icon">🎯</span>
-            <span>Niveau</span>
-          </label>
-          <select id="difficulty" class="styled-select">
-            <option value="facile">⭐ Facile (10)</option>
-            <option value="moyen">⭐⭐ Moyen (10)</option>
-            <option value="difficile">⭐⭐⭐ Difficile (10)</option>
-            <option value="tous">🔥 Tous (30)</option>
-          </select>
+      <main role="main">
+        <div class="controls-panel" role="group" aria-label="Paramètres du quiz">
+          <div class="control-group">
+            <label for="difficulty">
+              <span class="icon" aria-hidden="true">🎯</span>
+              <span>Niveau</span>
+            </label>
+            <select id="difficulty" class="styled-select" aria-label="Sélectionner le niveau de difficulté">
+              <option value="facile">⭐ Facile (10)</option>
+              <option value="moyen">⭐⭐ Moyen (10)</option>
+              <option value="difficile">⭐⭐⭐ Difficile (10)</option>
+              <option value="tous">🔥 Tous (30)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="count">
+              <span class="icon" aria-hidden="true">📊</span>
+              <span>Nombre</span>
+            </label>
+            <select id="count" class="styled-select" aria-label="Sélectionner le nombre de questions">
+              <option value="5">5 questions</option>
+              <option value="10" selected>10 questions</option>
+              <option value="15">15 questions</option>
+              <option value="30">30 questions</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button id="start" type="button" class="btn btn-primary" aria-label="Démarrer le quiz">
+              <span class="btn-icon" aria-hidden="true">🚀</span>
+              <span>Démarrer</span>
+            </button>
+          </div>
         </div>
 
-        <div class="control-group">
-          <label for="count">
-            <span class="icon">📊</span>
-            <span>Nombre</span>
-          </label>
-          <select id="count" class="styled-select">
-            <option value="5">5 questions</option>
-            <option value="10" selected>10 questions</option>
-            <option value="15">15 questions</option>
-            <option value="30">30 questions</option>
-          </select>
-        </div>
-
-        <div class="button-group">
-          <button id="start" type="button" class="btn btn-primary">
-            <span class="btn-icon">🚀</span>
-            <span>Démarrer</span>
-          </button>
-        </div>
-      </div>
-
-      <div id="quiz" class="quiz-container"></div>
-      <div id="score" class="score-container"></div>
+        <div id="quiz" class="quiz-container" role="region" aria-live="polite" aria-label="Zone de questions"></div>
+        <div id="score" class="score-container" role="status" aria-live="polite" aria-atomic="true"></div>
+      </main>
     </div>
 
     <script src="js/questions.js"></script>
     <script src="js/quiz-engine.js"></script>
   </body>
 </html>
-
-
