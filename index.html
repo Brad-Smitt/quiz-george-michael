@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Quiz interactif sur George Michael avec différents niveaux de difficulté et système d'indices"
+    />
+    <title>Quiz George Michael — Testez vos connaissances</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="background-animation"></div>
+    <div class="container">
+      <header class="header">
+        <div class="header-content">
+          <h1>
+            <span class="title-main">Quiz</span>
+            <span class="title-sub">George Michael</span>
+          </h1>
+          <p class="subtitle">Testez vos connaissances sur la légende de la pop</p>
+        </div>
+      </header>
+
+      <div class="controls-panel">
+        <div class="control-group">
+          <label for="difficulty">
+            <span class="icon">🎯</span>
+            <span>Niveau</span>
+          </label>
+          <select id="difficulty" class="styled-select">
+            <option value="facile">⭐ Facile (10)</option>
+            <option value="moyen">⭐⭐ Moyen (10)</option>
+            <option value="difficile">⭐⭐⭐ Difficile (10)</option>
+            <option value="tous">🔥 Tous (30)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="count">
+            <span class="icon">📊</span>
+            <span>Nombre</span>
+          </label>
+          <select id="count" class="styled-select">
+            <option value="5">5 questions</option>
+            <option value="10" selected>10 questions</option>
+            <option value="15">15 questions</option>
+            <option value="30">30 questions</option>
+          </select>
+        </div>
+
+        <div class="button-group">
+          <button id="start" type="button" class="btn btn-primary">
+            <span class="btn-icon">🚀</span>
+            <span>Démarrer</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="quiz" class="quiz-container"></div>
+      <div id="score" class="score-container"></div>
+    </div>
+
+    <script src="js/questions.js"></script>
+    <script src="js/quiz-engine.js"></script>
+  </body>
+</html>
+
+
