@@ -81,30 +81,30 @@ function renderCurrentQuestion() {
   quizEl.innerHTML = "";
   scoreEl.textContent = "";
 
-  const card = document.createElement("div");
-  card.className = "card";
-  card.dataset.qid = q.id;
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.qid = q.id;
 
-  // Meta informations
-  const meta = document.createElement("div");
-  meta.className = "meta";
+    // Meta informations
+    const meta = document.createElement("div");
+    meta.className = "meta";
   meta.innerHTML = `Question ${currentIndex + 1} / ${current.length} <span class="pill">${q.difficulty}</span> <span class="pill">${q.type}</span>`;
-  card.appendChild(meta);
+    card.appendChild(meta);
 
-  // Texte de la question
-  const p = document.createElement("div");
+    // Texte de la question
+    const p = document.createElement("div");
   p.className = "question-text";
-  p.innerHTML = q.prompt.replace(/\n/g, "<br>");
-  card.appendChild(p);
+    p.innerHTML = q.prompt.replace(/\n/g, "<br>");
+    card.appendChild(p);
 
-  // Zone de réponses
-  const area = document.createElement("div");
-  area.className = "opts";
-  
-  if (q.type === "mcq") {
-    q.options.forEach((opt, i) => {
-      const id = `${q.id}_${i}`;
-      const label = document.createElement("label");
+    // Zone de réponses
+    const area = document.createElement("div");
+    area.className = "opts";
+    
+    if (q.type === "mcq") {
+      q.options.forEach((opt, i) => {
+        const id = `${q.id}_${i}`;
+        const label = document.createElement("label");
       label.setAttribute("for", id);
       label.className = "option-label answer-option";
       
@@ -121,7 +121,7 @@ function renderCurrentQuestion() {
       
       label.appendChild(radio);
       label.appendChild(text);
-      area.appendChild(label);
+        area.appendChild(label);
       
       // Rendre toute la zone cliquable
       label.addEventListener('click', function(e) {
@@ -139,11 +139,11 @@ function renderCurrentQuestion() {
         // Ajouter la classe selected à l'option cliquée
         label.classList.add('selected');
       });
-    });
-  } else if (q.type === "truefalse") {
+      });
+    } else if (q.type === "truefalse") {
     ["true", "false"].forEach((val, idx) => {
       const id = `${q.id}_tf_${idx}`;
-      const label = document.createElement("label");
+        const label = document.createElement("label");
       label.setAttribute("for", id);
       label.className = "option-label answer-option";
       
@@ -162,7 +162,7 @@ function renderCurrentQuestion() {
       
       label.appendChild(radio);
       label.appendChild(text);
-      area.appendChild(label);
+        area.appendChild(label);
       
       // Rendre toute la zone cliquable
       label.addEventListener('click', function(e) {
@@ -180,57 +180,57 @@ function renderCurrentQuestion() {
         // Ajouter la classe selected à l'option cliquée
         label.classList.add('selected');
       });
-    });
-  } else if (q.type === "short" || q.type === "fill" || q.type === "order") {
-    const input = document.createElement("input");
-    input.type = "text";
+      });
+    } else if (q.type === "short" || q.type === "fill" || q.type === "order") {
+      const input = document.createElement("input");
+      input.type = "text";
     input.placeholder = q.type === "order" ? "Ex: 2-1-3-4" : "Ta réponse…";
-    input.name = q.id;
+      input.name = q.id;
     input.id = `input_${q.id}`;
     input.className = "answer-input";
     input.autocomplete = "off";
     input.spellcheck = false;
-    area.appendChild(input);
-    if (q.type === "order") {
-      const list = document.createElement("div");
-      list.className = "hint";
-      list.innerHTML =
-        "Éléments :<br>" +
-        q.items.map((x, i) => `(${i + 1}) ${x}`).join("<br>");
-      area.appendChild(list);
+      area.appendChild(input);
+      if (q.type === "order") {
+        const list = document.createElement("div");
+        list.className = "hint";
+        list.innerHTML =
+          "Éléments :<br>" +
+          q.items.map((x, i) => `(${i + 1}) ${x}`).join("<br>");
+        area.appendChild(list);
+      }
     }
-  }
-  card.appendChild(area);
+    card.appendChild(area);
 
-  // Zone d'indice + bouton
-  const hintArea = document.createElement("div");
-  hintArea.className = "hint-area";
-  const hintBtn = document.createElement("button");
-  hintBtn.className = "btn-hint";
+    // Zone d'indice + bouton
+    const hintArea = document.createElement("div");
+    hintArea.className = "hint-area";
+    const hintBtn = document.createElement("button");
+    hintBtn.className = "btn-hint";
   hintBtn.type = "button";
   hintBtn.textContent = "💡 Afficher l'indice";
-  const hintText = document.createElement("div");
-  hintText.className = "hint-text";
-  hintText.textContent = q.hint ?? "";
+    const hintText = document.createElement("div");
+    hintText.className = "hint-text";
+    hintText.textContent = q.hint ?? "";
   
   hintBtn.addEventListener("click", function(e) {
     e.preventDefault();
     e.stopPropagation();
-    hintText.classList.toggle("show");
-    hintBtn.textContent = hintText.classList.contains("show")
+      hintText.classList.toggle("show");
+      hintBtn.textContent = hintText.classList.contains("show")
       ? "🙈 Masquer l'indice"
       : "💡 Afficher l'indice";
-  });
+    });
   
-  hintArea.appendChild(hintBtn);
-  hintArea.appendChild(hintText);
-  card.appendChild(hintArea);
+    hintArea.appendChild(hintBtn);
+    hintArea.appendChild(hintText);
+    card.appendChild(hintArea);
 
   // Zone de feedback (cachée au début)
-  const fb = document.createElement("div");
+    const fb = document.createElement("div");
   fb.className = "hint feedback-hidden";
-  fb.dataset.role = "feedback";
-  card.appendChild(fb);
+    fb.dataset.role = "feedback";
+    card.appendChild(fb);
 
   // Bouton Valider
   const validateBtn = document.createElement("button");
@@ -249,7 +249,7 @@ function renderCurrentQuestion() {
   nextBtn.addEventListener("click", nextQuestion, { passive: false });
   card.appendChild(nextBtn);
 
-  quizEl.appendChild(card);
+    quizEl.appendChild(card);
   
   // Focus sur le premier input si c'est un champ texte
   const firstInput = card.querySelector('input[type="text"]');
@@ -387,54 +387,71 @@ function validateAnswer(e) {
   if (nextBtn) {
     nextBtn.style.display = "block";
     nextBtn.disabled = false;
+    nextBtn.style.opacity = "1";
+    nextBtn.style.cursor = "pointer";
   }
   
   // Afficher le score actuel
   updateProgressScore();
   
-  // Réinitialiser le flag de traitement après un court délai
-  setTimeout(() => {
-    isProcessing = false;
-  }, 300);
+  // Réinitialiser le flag de traitement immédiatement pour permettre le clic sur "Question suivante"
+  isProcessing = false;
 }
 
 /**
  * Passe à la question suivante
  */
 function nextQuestion(e) {
-  // Protection contre les double-clics
-  if (isProcessing) {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    return false;
-  }
-  
-  if (!isQuizStarted || currentIndex >= current.length) {
-    return false;
-  }
-  
-  isProcessing = true;
-  
   if (e) {
     e.preventDefault();
     e.stopPropagation();
   }
   
+  // Protection contre les double-clics
+  if (isProcessing) {
+    console.log("Déjà en cours de traitement, ignore le clic");
+    return false;
+  }
+  
+  if (!isQuizStarted) {
+    console.log("Le quiz n'a pas démarré");
+    return false;
+  }
+  
+  if (currentIndex >= current.length - 1) {
+    console.log("Dernière question atteinte");
+    // On est à la dernière question, afficher le score final
+    currentIndex++;
+    showFinalScore();
+    return false;
+  }
+  
+  isProcessing = true;
+  
+  // Désactiver le bouton immédiatement
   const nextBtn = document.querySelector(".btn-next");
   if (nextBtn) {
     nextBtn.disabled = true;
     nextBtn.style.opacity = "0.6";
+    nextBtn.style.cursor = "not-allowed";
   }
   
+  // Passer à la question suivante
   currentIndex++;
+  
+  console.log(`Passage à la question ${currentIndex + 1} / ${current.length}`);
   
   // Petit délai pour éviter les bugs visuels
   setTimeout(() => {
-    renderCurrentQuestion();
-    isProcessing = false;
-  }, 200);
+    try {
+      renderCurrentQuestion();
+      isProcessing = false;
+    } catch (error) {
+      console.error("Erreur lors du rendu de la question suivante:", error);
+      isProcessing = false;
+      alert("Une erreur est survenue. Veuillez recharger la page.");
+    }
+  }, 150);
   
   return false;
 }
