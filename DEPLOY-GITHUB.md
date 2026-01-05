@@ -111,3 +111,7 @@ Une fois déployé, vérifiez que :
 
 Assurez-vous que tous les fichiers sont bien à la racine du repository GitHub, pas dans un sous-dossier, pour que GitHub Pages fonctionne correctement.
 
+
+
+
+

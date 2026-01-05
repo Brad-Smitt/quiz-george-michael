@@ -100,3 +100,7 @@ Créé pour tester vos connaissances sur George Michael et Wham!
 
 **Note** : Ce quiz est un projet éducatif. Les informations sont basées sur des sources publiques.
 
+
+
+
+
